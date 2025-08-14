@@ -1,8 +1,22 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
 
 interface Category {
-  id: string;
+  categoryId: number;
   name: string;
 }
 
@@ -11,6 +25,14 @@ export default function CategoriesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Modal state
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newCategory, setNewCategory] = useState({
+    name: "",
+    categoryId: null
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   const API_BASE_URL = "https://accounting-api.zyaoaq.workers.dev";
   // const API_BASE_URL = "http://localhost:8787";
@@ -45,6 +67,79 @@ export default function CategoriesScreen() {
     fetchCategories();
   };
 
+  const handleAddCategory = async () => {
+    if (!newCategory.name.trim()) {
+      Alert.alert("Error", "Please enter a category name");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/categories?db=${DB}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: newCategory.name.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to add category: ${response.status}`);
+      }
+
+      // Reset form and close modal
+      setNewCategory({
+        name: "",
+        categoryId: null
+      });
+      setModalVisible(false);
+
+      // Refresh data
+      await fetchCategories();
+
+      Alert.alert("Success", "Category added successfully!");
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        err instanceof Error ? err.message : "Failed to add category"
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/categories?db=${DB}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          categoryId: categoryId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete category: ${response.status}`);
+      }
+
+      // Update local state immediately for better UX
+      setCategories(prev => prev.filter(cat => cat.categoryId !== categoryId));
+      
+      // Refresh data from server
+      await fetchCategories();
+      Alert.alert("Success", "Category deleted successfully!");
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        err instanceof Error ? err.message : "Failed to delete category"
+      );
+    }
+  };
+
   const getCategoryColor = (color?: string) => {
     if (color) {
       return color;
@@ -60,6 +155,12 @@ export default function CategoriesScreen() {
         <View style={styles.categoryInfo}>
           <Text style={styles.categoryName}>{item.name}</Text>
         </View>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteCategory(item.categoryId)}
+        >
+          <Text style={styles.deleteButtonText}>⤬</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -67,7 +168,7 @@ export default function CategoriesScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#666" />
+        <ActivityIndicator style={{ marginTop: 20 }} size="large" color="#666" />
         <Text style={styles.loadingText}>Loading categories...</Text>
       </View>
     );
@@ -93,7 +194,7 @@ export default function CategoriesScreen() {
         <FlatList
           data={categories}
           renderItem={renderCategoryItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.categoryId.toString()}
           style={styles.list}
           contentContainerStyle={styles.listContent}
           refreshControl={
@@ -102,6 +203,79 @@ export default function CategoriesScreen() {
           showsVerticalScrollIndicator={true}
         />
       )}
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => {
+          setModalVisible(true);
+        }}
+      >
+        <Text style={styles.fabText}>✚</Text>
+      </TouchableOpacity>
+
+      {/* Add Category Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add New Category</Text>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView 
+              style={styles.modalBody}
+              showsVerticalScrollIndicator={true}
+            >
+              <Text style={styles.inputLabel}>Category Name</Text>
+              <TextInput
+                style={styles.textInput}
+                value={newCategory.name}
+                onChangeText={(text) =>
+                  setNewCategory((prev) => ({ ...prev, name: text }))
+                }
+                placeholder="Enter category name"
+                placeholderTextColor="#999"
+                autoFocus={true}
+              />
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.addButton,
+                  submitting && styles.addButtonDisabled,
+                ]}
+                onPress={handleAddCategory}
+                disabled={submitting}
+              >
+                <Text style={styles.addButtonText}>
+                  {submitting ? "Adding..." : "Add Category"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -112,9 +286,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
   },
   loadingText: {
-    marginTop: 10,
+    marginTop: 20,
     fontSize: 16,
     color: "#666",
+    textAlign: "center",
   },
   errorText: {
     fontSize: 16,
@@ -151,6 +326,7 @@ const styles = StyleSheet.create({
   categoryHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
   },
   categoryColor: {
     width: 20,
@@ -177,6 +353,21 @@ const styles = StyleSheet.create({
     color: "#999",
     fontFamily: "monospace",
   },
+  deleteButton: {
+    padding: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+  },
+  deleteButtonText: {
+    fontSize: 18,
+    color: "#666",
+    fontWeight: "600",
+  },
   emptyState: {
     flex: 1,
     justifyContent: "center",
@@ -193,5 +384,117 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#999",
     textAlign: "center",
+  },
+  fab: {
+    position: "absolute",
+    bottom: 30,
+    right: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#666",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  fabText: {
+    fontSize: 24,
+    color: "white",
+    fontWeight: "bold",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    width: "90%",
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 7,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  closeButton: {
+    padding: 5,
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: "#666",
+  },
+  modalBody: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 8,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    padding: 15,
+    fontSize: 16,
+    color: "#333",
+    backgroundColor: "#f9f9f9",
+  },
+  modalFooter: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 10,
+  },
+  cancelButton: {
+    backgroundColor: "#F0F0F0",
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
+  },
+  cancelButtonText: {
+    color: "#666",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  addButton: {
+    backgroundColor: "#666",
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#666",
+  },
+  addButtonDisabled: {
+    backgroundColor: "#ccc",
+    borderColor: "#ccc",
+  },
+  addButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

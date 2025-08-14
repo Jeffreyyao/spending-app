@@ -29,6 +29,9 @@ interface Category {
   name: string;
 }
 
+type SortOption = 'date' | 'amount' | 'category';
+type SortDirection = 'asc' | 'desc';
+
 const CURRENCIES = [
   { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
   { code: "HKD", symbol: "HK$", name: "Hong Kong Dollar" },
@@ -43,13 +46,18 @@ export default function SpendingsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Sorting state
+  const [sortBy, setSortBy] = useState<SortOption>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
   // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [newSpending, setNewSpending] = useState({
     description: "",
     amount: "",
-    categoryId: null,
+    categoryId: null as number | null,
     currency: "HKD",
+    type: "spending" as "spending" | "income",
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -120,7 +128,6 @@ export default function SpendingsScreen() {
 
   const handleAddSpending = async () => {
     if (
-      !newSpending.description.trim() ||
       !newSpending.amount.trim() ||
       !newSpending.categoryId
     ) {
@@ -129,10 +136,13 @@ export default function SpendingsScreen() {
     }
 
     const amount = parseFloat(newSpending.amount);
-    if (isNaN(amount) || amount === 0) {
+    if (isNaN(amount) || amount <= 0) {
       Alert.alert("Error", "Please enter a valid amount");
       return;
     }
+
+    // Set amount sign based on type
+    const finalAmount = newSpending.type === "income" ? Math.abs(amount) : -Math.abs(amount);
 
     setSubmitting(true);
     try {
@@ -143,7 +153,7 @@ export default function SpendingsScreen() {
         },
         body: JSON.stringify({
           description: newSpending.description.trim(),
-          amount: amount,
+          amount: finalAmount,
           categoryId: newSpending.categoryId,
           currency: newSpending.currency,
           dateOfSpending: new Date().toISOString(),
@@ -160,6 +170,7 @@ export default function SpendingsScreen() {
         amount: "",
         categoryId: null,
         currency: "HKD",
+        type: "spending",
       });
       setModalVisible(false);
 
@@ -177,6 +188,133 @@ export default function SpendingsScreen() {
     }
   };
 
+  const handleDeleteSpending = async (spendingId: string, description: string) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/spendings?db=${DB}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            spendingId: spendingId
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete spending: ${response.status}`);
+      }
+
+      // Update local state immediately for better UX
+      setSpendings(prev => prev.filter(spending => spending.spendingId !== spendingId));
+      
+      // Refresh data from server
+      await fetchData();
+      Alert.alert("Success", "Spending deleted successfully!");
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        err instanceof Error ? err.message : "Failed to delete spending"
+      );
+    }
+  };
+
+  const getSortedSpendings = () => {
+    const sorted = [...spendings];
+    
+    sorted.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.dateOfSpending).getTime() - new Date(b.dateOfSpending).getTime();
+          break;
+        case 'amount':
+          comparison = a.amount - b.amount;
+          break;
+        case 'category':
+          const categoryA = getCategoryName(a.categoryId);
+          const categoryB = getCategoryName(b.categoryId);
+          comparison = categoryA.localeCompare(categoryB);
+          break;
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+    
+    return sorted;
+  };
+
+  const handleSort = (option: SortOption) => {
+    if (sortBy === option) {
+      // Toggle direction if same option selected
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new option with default direction
+      setSortBy(option);
+      setSortDirection('desc');
+    }
+  };
+
+  const getSortIcon = (option: SortOption) => {
+    if (sortBy !== option) return ' ⚬';
+    return sortDirection === 'asc' ? ' ↑' : ' ↓';
+  };
+
+  const renderSortHeader = () => (
+    <View style={styles.sortHeader}>
+      <Text style={styles.sortHeaderTitle}>Sort by:</Text>
+      <View style={styles.sortOptions}>
+        <TouchableOpacity
+          style={[
+            styles.sortOption,
+            sortBy === 'date' && styles.sortOptionSelected
+          ]}
+          onPress={() => handleSort('date')}
+        >
+          <Text style={[
+            styles.sortOptionText,
+            sortBy === 'date' && styles.sortOptionTextSelected
+          ]}>
+            Date{getSortIcon('date')}
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[
+            styles.sortOption,
+            sortBy === 'amount' && styles.sortOptionSelected
+          ]}
+          onPress={() => handleSort('amount')}
+        >
+          <Text style={[
+            styles.sortOptionText,
+            sortBy === 'amount' && styles.sortOptionTextSelected
+          ]}>
+            Amount{getSortIcon('amount')}
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[
+            styles.sortOption,
+            sortBy === 'category' && styles.sortOptionSelected
+          ]}
+          onPress={() => handleSort('category')}
+        >
+          <Text style={[
+            styles.sortOptionText,
+            sortBy === 'category' && styles.sortOptionTextSelected
+          ]}>
+            Category{getSortIcon('category')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   const renderSpendingItem = ({ item }: { item: Spending }) => (
     <View style={styles.spendingItem}>
       <View style={styles.spendingHeader}>
@@ -186,6 +324,12 @@ export default function SpendingsScreen() {
         ]}>
           {formatAmount(item.amount, item.currency)}
         </Text>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteSpending(item.spendingId, item.description)}
+        >
+          <Text style={styles.deleteButtonText}>⤬</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.spendingDetails}>
         <Text style={styles.spendingCategory}>
@@ -206,7 +350,7 @@ export default function SpendingsScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#666" />
+        <ActivityIndicator style={{ marginTop: 20 }} size="large" color="#666" />
         <Text style={styles.loadingText}>Loading spendings...</Text>
       </View>
     );
@@ -233,17 +377,20 @@ export default function SpendingsScreen() {
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={spendings}
-          renderItem={renderSpendingItem}
-          keyExtractor={(item) => item.spendingId}
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          showsVerticalScrollIndicator={true}
-        />
+        <>
+          {renderSortHeader()}
+          <FlatList
+            data={getSortedSpendings()}
+            renderItem={renderSpendingItem}
+            keyExtractor={(item) => item.spendingId}
+            style={styles.list}
+            contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            showsVerticalScrollIndicator={true}
+          />
+        </>
       )}
 
       {/* Floating Action Button */}
@@ -253,7 +400,7 @@ export default function SpendingsScreen() {
           setModalVisible(true);
         }}
       >
-        <Text style={styles.fabText}>+</Text>
+        <Text style={styles.fabText}>✚</Text>
       </TouchableOpacity>
 
       {/* Add Spending Modal */}
@@ -294,16 +441,48 @@ export default function SpendingsScreen() {
               />
 
               <Text style={styles.inputLabel}>Amount</Text>
-              <TextInput
-                style={styles.textInput}
-                value={newSpending.amount}
-                onChangeText={(text) =>
-                  setNewSpending((prev) => ({ ...prev, amount: text }))
-                }
-                placeholder="0.00"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
+              <View style={styles.amountRow}>
+                <TextInput
+                  style={[styles.textInput, styles.amountInput]}
+                  value={newSpending.amount}
+                  onChangeText={(text) =>
+                    setNewSpending((prev) => ({ ...prev, amount: text }))
+                  }
+                  placeholder="0.00"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                />
+                <View style={styles.typeSelector}>
+                  <TouchableOpacity
+                    style={[
+                      styles.typeOption,
+                      newSpending.type === "spending" && styles.typeOptionSelected
+                    ]}
+                    onPress={() => setNewSpending(prev => ({ ...prev, type: "spending" }))}
+                  >
+                    <Text style={[
+                      styles.typeText,
+                      newSpending.type === "spending" && styles.typeTextSelected
+                    ]}>
+                      Spending
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.typeOption,
+                      newSpending.type === "income" && styles.typeOptionSelected
+                    ]}
+                    onPress={() => setNewSpending(prev => ({ ...prev, type: "income" }))}
+                  >
+                    <Text style={[
+                      styles.typeText,
+                      newSpending.type === "income" && styles.typeTextSelected
+                    ]}>
+                      Income
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
               <Text style={styles.inputLabel}>Currency</Text>
               <ScrollView
@@ -367,7 +546,7 @@ export default function SpendingsScreen() {
                         setNewSpending((prev) => {
                           const updated = {
                             ...prev,
-                            category: category.categoryId,
+                            categoryId: category.categoryId,
                           };
                           return updated;
                         });
@@ -420,9 +599,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
   },
   loadingText: {
-    marginTop: 10,
+    marginTop: 20,
     fontSize: 16,
     color: "#666",
+    textAlign: "center",
   },
   errorText: {
     fontSize: 16,
@@ -459,6 +639,7 @@ const styles = StyleSheet.create({
   spendingHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   spendingAmount: {
@@ -467,6 +648,22 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     marginRight: 12,
     minWidth: 80,
+  },
+  deleteButton: {
+    padding: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+  },
+  deleteButtonText: {
+    fontSize: 18,
+    color: "#666",
+    fontWeight: "600",
+    textAlignVertical: "center",
   },
   spendingDescriptionContainer: {
     marginTop: 8,
@@ -682,6 +879,81 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     fontSize: 16,
+    color: "white",
+    fontWeight: "600",
+  },
+  // Sort Header Styles
+  sortHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: "#E0E0E0",
+    borderBottomWidth: 1,
+    borderBottomColor: "#D0D0D0",
+  },
+  sortHeaderTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  sortOptions: {
+    marginLeft: 15,
+    flexDirection: "row",
+    gap: 15,
+  },
+  sortOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+    backgroundColor: "#F5F5F5",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  sortOptionSelected: {
+    backgroundColor: "#666",
+    borderColor: "#666",
+  },
+  sortOptionText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  sortOptionTextSelected: {
+    color: "white",
+    fontWeight: "600",
+  },
+  // Amount and Type Selection Styles
+  amountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  amountInput: {
+    flex: 1,
+  },
+  typeSelector: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  typeOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: "#F0F0F0",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  typeOptionSelected: {
+    backgroundColor: "#666",
+    borderColor: "#666",
+  },
+  typeText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
+  },
+  typeTextSelected: {
     color: "white",
     fontWeight: "600",
   },
