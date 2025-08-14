@@ -12,8 +12,8 @@ export default function CategoriesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // const API_BASE_URL = "https://accounting-api.zyaoaq.workers.dev";
-  const API_BASE_URL = "http://localhost:8787";
+  const API_BASE_URL = "https://accounting-api.zyaoaq.workers.dev";
+  // const API_BASE_URL = "http://localhost:8787";
   const DB = "accounting-0";
 
   const fetchCategories = async () => {
@@ -50,7 +50,7 @@ export default function CategoriesScreen() {
       return color;
     }
     // Default colors if no color is provided
-    const defaultColors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#5856D6'];
+    const defaultColors = ['#666', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#5856D6'];
     return defaultColors[Math.floor(Math.random() * defaultColors.length)];
   };
 
@@ -67,7 +67,7 @@ export default function CategoriesScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#666" />
         <Text style={styles.loadingText}>Loading categories...</Text>
       </View>
     );
@@ -84,9 +84,6 @@ export default function CategoriesScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Categories</Text>
-      <Text style={styles.subtitle}>Manage your spending categories</Text>
-      
       {categories.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>No categories found</Text>
@@ -102,7 +99,7 @@ export default function CategoriesScreen() {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={true}
         />
       )}
     </View>
@@ -113,20 +110,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginTop: 60,
-    marginBottom: 10,
-    marginHorizontal: 20,
-    color: "#333",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 20,
-    marginHorizontal: 20,
   },
   loadingText: {
     marginTop: 10,
@@ -141,7 +124,7 @@ const styles = StyleSheet.create({
   },
   retryText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#666",
     textAlign: "center",
     textDecorationLine: "underline",
   },
@@ -149,8 +132,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    padding: 20,
   },
   categoryItem: {
     backgroundColor: "white",
@@ -169,7 +151,6 @@ const styles = StyleSheet.create({
   categoryHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
   },
   categoryColor: {
     width: 20,
