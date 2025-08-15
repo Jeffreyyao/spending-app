@@ -36,8 +36,8 @@ export default function RootLayout() {
           backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
           borderTopColor: "#E5E5EA",
-          paddingBottom: 5,
-          paddingTop: 5,
+          paddingBottom: 3,
+          paddingTop: 3,
           height: 60,
         },
         headerStyle: {
