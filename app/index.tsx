@@ -674,7 +674,6 @@ const styles = StyleSheet.create({
   spendingDescription: {
     fontSize: 14,
     color: "#666",
-    fontStyle: "italic",
   },
   spendingDetails: {
     flexDirection: "row",
