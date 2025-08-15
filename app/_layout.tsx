@@ -1,7 +1,32 @@
-import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from 'expo-font';
 import { Tabs } from "expo-router";
+import * as SplashScreen from 'expo-splash-screen';
+import { List, User, Wallet } from "lucide-react-native";
+import { useEffect } from 'react';
+import { Platform } from 'react-native';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  // Don't render until fonts are loaded
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
+  // Use system font as fallback for web if custom font fails
+  const headerFontFamily = Platform.OS === 'web' && !fontsLoaded ? 'monospace' : 'SpaceMono';
+
   return (
     <Tabs
       screenOptions={{
@@ -21,6 +46,7 @@ export default function RootLayout() {
         headerTintColor: "#FFFFFF",
         headerTitleStyle: {
           fontWeight: "bold",
+          fontFamily: headerFontFamily,
         },
       }}
     >
@@ -29,7 +55,7 @@ export default function RootLayout() {
         options={{
           title: "Spendings",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="wallet-outline" size={size} color={color} />
+            <Wallet size={size} color={color} />
           ),
         }}
       />
@@ -38,7 +64,7 @@ export default function RootLayout() {
         options={{
           title: "Categories",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list-outline" size={size} color={color} />
+            <List size={size} color={color} />
           ),
         }}
       />
@@ -47,7 +73,7 @@ export default function RootLayout() {
         options={{
           title: "Personal",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+            <User size={size} color={color} />
           ),
         }}
       />

@@ -1,3 +1,4 @@
+import { Plus, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -159,7 +160,7 @@ export default function CategoriesScreen() {
           style={styles.deleteButton}
           onPress={() => handleDeleteCategory(item.categoryId)}
         >
-          <Text style={styles.deleteButtonText}>⤬</Text>
+          <X size={16} color="#666" />
         </TouchableOpacity>
       </View>
     </View>
@@ -211,7 +212,7 @@ export default function CategoriesScreen() {
           setModalVisible(true);
         }}
       >
-        <Text style={styles.fabText}>✚</Text>
+        <Plus size={24} color="white" />
       </TouchableOpacity>
 
       {/* Add Category Modal */}
@@ -232,7 +233,7 @@ export default function CategoriesScreen() {
                 onPress={() => setModalVisible(false)}
                 style={styles.closeButton}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <X size={16} color="#666" />
               </TouchableOpacity>
             </View>
 
@@ -363,11 +364,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "center",
   },
-  deleteButtonText: {
-    fontSize: 18,
-    color: "#666",
-    fontWeight: "600",
-  },
+
   emptyState: {
     flex: 1,
     justifyContent: "center",
@@ -404,11 +401,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
     elevation: 8,
   },
-  fabText: {
-    fontSize: 24,
-    color: "white",
-    fontWeight: "bold",
-  },
+
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -440,10 +433,7 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 5,
   },
-  closeButtonText: {
-    fontSize: 24,
-    color: "#666",
-  },
+
   modalBody: {
     marginBottom: 20,
   },

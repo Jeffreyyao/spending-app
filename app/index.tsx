@@ -1,3 +1,4 @@
+import { ArrowDown, ArrowUp, MoreVertical, Plus, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -259,13 +260,12 @@ export default function SpendingsScreen() {
   };
 
   const getSortIcon = (option: SortOption) => {
-    if (sortBy !== option) return ' ⚬';
-    return sortDirection === 'asc' ? ' ↑' : ' ↓';
+    if (sortBy !== option) return (<MoreVertical size={12} color="#666666"/>);
+    return sortDirection === 'asc' ? (<ArrowUp size={15} color="white"/>) : (<ArrowDown size={15} color="white"/>);
   };
 
   const renderSortHeader = () => (
     <View style={styles.sortHeader}>
-      <Text style={styles.sortHeaderTitle}>Sort by:</Text>
       <View style={styles.sortOptions}>
         <TouchableOpacity
           style={[
@@ -278,7 +278,7 @@ export default function SpendingsScreen() {
             styles.sortOptionText,
             sortBy === 'date' && styles.sortOptionTextSelected
           ]}>
-            Date{getSortIcon('date')}
+            Date {getSortIcon('date')}
           </Text>
         </TouchableOpacity>
         
@@ -293,7 +293,7 @@ export default function SpendingsScreen() {
             styles.sortOptionText,
             sortBy === 'amount' && styles.sortOptionTextSelected
           ]}>
-            Amount{getSortIcon('amount')}
+            Amount {getSortIcon('amount')}
           </Text>
         </TouchableOpacity>
         
@@ -308,7 +308,7 @@ export default function SpendingsScreen() {
             styles.sortOptionText,
             sortBy === 'category' && styles.sortOptionTextSelected
           ]}>
-            Category{getSortIcon('category')}
+            Category {getSortIcon('category')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -328,7 +328,7 @@ export default function SpendingsScreen() {
           style={styles.deleteButton}
           onPress={() => handleDeleteSpending(item.spendingId, item.description)}
         >
-          <Text style={styles.deleteButtonText}>⤬</Text>
+          <X size={16} color="#666" />
         </TouchableOpacity>
       </View>
       <View style={styles.spendingDetails}>
@@ -400,7 +400,7 @@ export default function SpendingsScreen() {
           setModalVisible(true);
         }}
       >
-        <Text style={styles.fabText}>✚</Text>
+        <Plus size={24} color="white" />
       </TouchableOpacity>
 
       {/* Add Spending Modal */}
@@ -421,7 +421,7 @@ export default function SpendingsScreen() {
                 onPress={() => setModalVisible(false)}
                 style={styles.closeButton}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <X size={16} color="#666" />
               </TouchableOpacity>
             </View>
 
@@ -659,12 +659,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "center",
   },
-  deleteButtonText: {
-    fontSize: 18,
-    color: "#666",
-    fontWeight: "600",
-    textAlignVertical: "center",
-  },
+
   spendingDescriptionContainer: {
     marginTop: 8,
     paddingTop: 8,
@@ -729,11 +724,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
     elevation: 8,
   },
-  fabText: {
-    fontSize: 24,
-    color: "white",
-    fontWeight: "bold",
-  },
+
   // Modal Styles
   modalOverlay: {
     flex: 1,
@@ -767,10 +758,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  closeButtonText: {
-    fontSize: 16,
-    color: "#666",
-  },
+
   modalBody: {
     padding: 20,
   },
@@ -909,6 +897,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
     borderWidth: 1,
     borderColor: "#E0E0E0",
+    alignItems: "center",
+    justifyContent: "center",
   },
   sortOptionSelected: {
     backgroundColor: "#666",
@@ -917,10 +907,16 @@ const styles = StyleSheet.create({
   sortOptionText: {
     fontSize: 14,
     color: "#666",
+    textAlign: "center",
   },
   sortOptionTextSelected: {
     color: "white",
     fontWeight: "600",
+    textAlign: "center",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   // Amount and Type Selection Styles
   amountRow: {
