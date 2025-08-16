@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, MoreVertical, Plus, X } from "lucide-react-native";
+import { ArrowDown, ArrowUp, Edit, MoreVertical, Plus, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -15,6 +15,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useCategoryContext } from "./src/CategoryContext";
+import { config } from "./src/config";
 
 interface Spending {
   spendingId: string;
@@ -35,14 +37,14 @@ type SortDirection = 'asc' | 'desc';
 
 const CURRENCIES = [
   { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
-  { code: "HKD", symbol: "HK$", name: "Hong Kong Dollar" },
-  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "HKD", symbol: "$", name: "Hong Kong Dollar" },
+  { code: "JPY", symbol: "JP¥", name: "Japanese Yen" },
+  { code: "USD", symbol: "US$", name: "US Dollar" },
 ];
 
 export default function SpendingsScreen() {
+  const { categories, categoriesVersion } = useCategoryContext();
   const [spendings, setSpendings] = useState<Spending[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,9 +64,17 @@ export default function SpendingsScreen() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const API_BASE_URL = "https://accounting-api.zyaoaq.workers.dev";
-  // const API_BASE_URL = "http://localhost:8787";
-  const DB = "accounting-0";
+  // Edit modal state
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingSpending, setEditingSpending] = useState<Spending | null>(null);
+  const [editSpending, setEditSpending] = useState({
+    description: "",
+    amount: "",
+    categoryId: null as number | null,
+    currency: "HKD",
+    type: "spending" as "spending" | "income",
+  });
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -72,7 +82,7 @@ export default function SpendingsScreen() {
 
       // Fetch spendings
       const spendingsResponse = await fetch(
-        `${API_BASE_URL}/spendings?db=${DB}`
+        `${config.API_BASE_URL}/spendings?db=${config.DB}`
       );
       if (!spendingsResponse.ok) {
         throw new Error(
@@ -81,19 +91,8 @@ export default function SpendingsScreen() {
       }
       const spendingsData = await spendingsResponse.json();
 
-      // Fetch categories
-      const categoriesResponse = await fetch(
-        `${API_BASE_URL}/categories?db=${DB}`
-      );
-      if (!categoriesResponse.ok) {
-        throw new Error(
-          `Failed to fetch categories: ${categoriesResponse.status}`
-        );
-      }
-      const categoriesData = await categoriesResponse.json();
-
       setSpendings(spendingsData);
-      setCategories(categoriesData);
+      // Categories are now managed by context, no need to fetch here
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
       console.error("Error fetching data:", err);
@@ -106,6 +105,16 @@ export default function SpendingsScreen() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Refresh spendings when categories change (but not categories themselves)
+  useEffect(() => {
+    if (categoriesVersion > 0) {
+      // Only refresh spendings data, categories are already updated in context
+      fetchData();
+    }
+  }, [categoriesVersion]);
+
+
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -147,7 +156,7 @@ export default function SpendingsScreen() {
 
     setSubmitting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/spendings?db=${DB}`, {
+      const response = await fetch(`${config.API_BASE_URL}/spendings?db=${config.DB}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -192,7 +201,7 @@ export default function SpendingsScreen() {
   const handleDeleteSpending = async (spendingId: string, description: string) => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/spendings?db=${DB}`,
+        `${config.API_BASE_URL}/spendings?db=${config.DB}`,
         {
           method: "DELETE",
           headers: {
@@ -220,6 +229,79 @@ export default function SpendingsScreen() {
         err instanceof Error ? err.message : "Failed to delete spending"
       );
     }
+  };
+
+  const handleEditSpending = async () => {
+    if (editingSpending === null) {
+      console.error("editingSpending null");
+      return;
+    }
+
+    let amount = parseFloat(editSpending.amount);
+    if (isNaN(amount)) {
+      amount = 0;
+      return;
+    }
+
+    // Set amount sign based on type
+    const finalAmount = editSpending.type === "income" ? Math.abs(amount) : -Math.abs(amount);
+
+    setEditSubmitting(true);
+    try {
+      const response = await fetch(`${config.API_BASE_URL}/spendings?db=${config.DB}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          spendingId: editingSpending.spendingId,
+          description: editSpending.description.trim() || undefined,
+          amount: finalAmount !== 0 ? finalAmount : undefined,
+          categoryId: editSpending.categoryId || undefined,
+          currency: editSpending.currency || undefined,
+          dateOfSpending: editingSpending.dateOfSpending || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update spending: ${response.status}`);
+      }
+
+      // Reset form and close modal
+      setEditingSpending(null);
+      setEditSpending({
+        description: "",
+        amount: "",
+        categoryId: null,
+        currency: "HKD",
+        type: "spending",
+      });
+      setEditModalVisible(false);
+
+      // Refresh data
+      await fetchData();
+
+      Alert.alert("Success", "Spending updated successfully!");
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        err instanceof Error ? err.message : "Failed to update spending"
+      );
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const openEditModal = (spending: Spending) => {
+    setEditingSpending(spending);
+    setEditSpending({
+      description: spending.description || "",
+      amount: Math.abs(spending.amount).toString(),
+      categoryId: spending.categoryId,
+      currency: spending.currency || "HKD",
+      type: spending.amount >= 0 ? "income" : "spending",
+    });
+    setEditModalVisible(true);
   };
 
   const getSortedSpendings = () => {
@@ -324,12 +406,20 @@ export default function SpendingsScreen() {
         ]}>
           {formatAmount(item.amount, item.currency)}
         </Text>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteSpending(item.spendingId, item.description)}
-        >
-          <X size={16} color="#666" />
-        </TouchableOpacity>
+        <View style={styles.spendingActions}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => openEditModal(item)}
+          >
+            <Edit size={20} color="#666" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => handleDeleteSpending(item.spendingId, item.description)}
+          >
+            <X size={16} color="#666" />
+          </TouchableOpacity>
+        </View>
       </View>
       <View style={styles.spendingDetails}>
         <Text style={styles.spendingCategory}>
@@ -456,7 +546,7 @@ export default function SpendingsScreen() {
                   <TouchableOpacity
                     style={[
                       styles.typeOption,
-                      newSpending.type === "spending" && styles.typeOptionSelected
+                      newSpending.type === "spending" && styles.typeOptionSpendingSelected
                     ]}
                     onPress={() => setNewSpending(prev => ({ ...prev, type: "spending" }))}
                   >
@@ -470,7 +560,7 @@ export default function SpendingsScreen() {
                   <TouchableOpacity
                     style={[
                       styles.typeOption,
-                      newSpending.type === "income" && styles.typeOptionSelected
+                      newSpending.type === "income" && styles.typeOptionIncomeSelected
                     ]}
                     onPress={() => setNewSpending(prev => ({ ...prev, type: "income" }))}
                   >
@@ -590,6 +680,186 @@ export default function SpendingsScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Edit Spending Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={editModalVisible}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Spending</Text>
+              <TouchableOpacity
+                onPress={() => setEditModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <X size={16} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView 
+              style={styles.modalBody}
+              showsVerticalScrollIndicator={true}
+            >
+              <Text style={styles.inputLabel}>Description</Text>
+              <TextInput
+                style={styles.textInput}
+                value={editSpending.description}
+                onChangeText={(text) =>
+                  setEditSpending((prev) => ({ ...prev, description: text }))
+                }
+                placeholder="Enter spending description"
+                placeholderTextColor="#999"
+              />
+
+              <Text style={styles.inputLabel}>Amount</Text>
+              <View style={styles.amountRow}>
+                <TextInput
+                  style={[styles.textInput, styles.amountInput]}
+                  value={editSpending.amount}
+                  onChangeText={(text) =>
+                    setEditSpending((prev) => ({ ...prev, amount: text }))
+                  }
+                  placeholder="0.00"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                />
+                <View style={styles.typeSelector}>
+                  <TouchableOpacity
+                    style={[
+                      styles.typeOption,
+                      editSpending.type === "spending" && styles.typeOptionSpendingSelected
+                    ]}
+                    onPress={() => setEditSpending(prev => ({ ...prev, type: "spending" }))}
+                  >
+                    <Text style={[
+                      styles.typeText,
+                      editSpending.type === "spending" && styles.typeTextSelected
+                    ]}>
+                      Spending
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.typeOption,
+                      editSpending.type === "income" && styles.typeOptionIncomeSelected
+                    ]}
+                    onPress={() => setEditSpending(prev => ({ ...prev, type: "income" }))}
+                  >
+                    <Text style={[
+                      styles.typeText,
+                      editSpending.type === "income" && styles.typeTextSelected
+                    ]}>
+                      Income
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <Text style={styles.inputLabel}>Currency</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={true}
+                style={styles.currencyContainer}
+              >
+                {CURRENCIES.map((currency) => (
+                  <TouchableOpacity
+                    key={currency.code}
+                    style={[
+                      styles.currencyOption,
+                      editSpending.currency === currency.code &&
+                        styles.currencyOptionSelected,
+                    ]}
+                    onPress={() =>
+                      setEditSpending((prev) => ({
+                        ...prev,
+                        currency: currency.code,
+                      }))
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.currencyText,
+                        editSpending.currency === currency.code &&
+                          styles.currencyTextSelected,
+                      ]}
+                    >
+                      {currency.symbol} {currency.code}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <Text style={styles.inputLabel}>Category</Text>
+              {categories.length === 0 ? (
+                <Text style={styles.noCategoriesText}>
+                  No categories available
+                </Text>
+              ) : (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={true}
+                  style={styles.categoryContainer}
+              >
+                  {categories.map((category) => (
+                    <TouchableOpacity
+                      key={category.categoryId}
+                      style={[
+                        styles.categoryOption,
+                        editSpending.categoryId === category.categoryId &&
+                          styles.categoryOptionSelected,
+                      ]}
+                      onPress={() => {
+                        setEditSpending((prev) => ({
+                          ...prev,
+                          categoryId: category.categoryId,
+                        }));
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.categoryText,
+                          editSpending.categoryId === category.categoryId &&
+                            styles.categoryTextSelected,
+                        ]}
+                      >
+                        {category.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setEditModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.addButton,
+                  editSubmitting && styles.addButtonDisabled,
+                ]}
+                onPress={handleEditSpending}
+                disabled={editSubmitting}
+              >
+                <Text style={styles.addButtonText}>
+                  {editSubmitting ? "Updating..." : "Update Spending"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -650,14 +920,28 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
   deleteButton: {
-    padding: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    padding: 6,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: "#F0F0F0",
     justifyContent: "center",
     alignItems: "center",
     alignSelf: "center",
+  },
+  editButton: {
+    padding: 6,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  spendingActions: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   spendingDescriptionContainer: {
@@ -736,6 +1020,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: "80%",
+    width: "100%",
   },
   modalHeader: {
     flexDirection: "row",
@@ -761,6 +1046,7 @@ const styles = StyleSheet.create({
 
   modalBody: {
     padding: 20,
+    paddingHorizontal: 16,
   },
   inputLabel: {
     fontSize: 16,
@@ -839,6 +1125,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#E5E5E5",
     gap: 12,
+    justifyContent: "space-between",
   },
   cancelButton: {
     flex: 1,
@@ -847,6 +1134,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F0F0",
     justifyContent: "center",
     alignItems: "center",
+    minWidth: 0,
   },
   cancelButtonText: {
     fontSize: 16,
@@ -860,6 +1148,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#666",
     justifyContent: "center",
     alignItems: "center",
+    minWidth: 0,
   },
   addButtonDisabled: {
     backgroundColor: "#B0B0B0",
@@ -922,14 +1211,17 @@ const styles = StyleSheet.create({
   amountRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    flexWrap: "wrap",
+    gap: 8,
   },
   amountInput: {
     flex: 1,
+    minWidth: 120,
   },
   typeSelector: {
     flexDirection: "row",
     gap: 8,
+    flexShrink: 0,
   },
   typeOption: {
     paddingHorizontal: 12,
@@ -938,15 +1230,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F0F0",
     borderWidth: 1,
     borderColor: "#E0E0E0",
+    minWidth: 70,
+    alignItems: "center",
   },
-  typeOptionSelected: {
-    backgroundColor: "#666",
-    borderColor: "#666",
+  typeOptionSpendingSelected: {
+    backgroundColor: "#FF9500",
+    borderColor: "#FF9500",
+  },
+  typeOptionIncomeSelected: {
+    backgroundColor: "#007AFF",
+    borderColor: "#007AFF",
   },
   typeText: {
     fontSize: 14,
     color: "#666",
     fontWeight: "500",
+    textAlign: "center",
   },
   typeTextSelected: {
     color: "white",

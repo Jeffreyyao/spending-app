@@ -1,4 +1,4 @@
-import { Plus, X } from "lucide-react-native";
+import { Edit, Plus, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -15,6 +15,8 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import { useCategoryContext } from "./src/CategoryContext";
+import { config } from "./src/config";
 
 interface Category {
   categoryId: number;
@@ -22,7 +24,8 @@ interface Category {
 }
 
 export default function CategoriesScreen() {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const { setCategories, refreshCategories } = useCategoryContext();
+  const [categories, setLocalCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,21 +38,24 @@ export default function CategoriesScreen() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const API_BASE_URL = "https://accounting-api.zyaoaq.workers.dev";
-  // const API_BASE_URL = "http://localhost:8787";
-  const DB = "accounting-0";
+  // Edit modal state
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   const fetchCategories = async () => {
     try {
       setError(null);
       
-      const categoriesResponse = await fetch(`${API_BASE_URL}/categories?db=${DB}`);
+      const categoriesResponse = await fetch(`${config.API_BASE_URL}/categories?db=${config.DB}`);
       if (!categoriesResponse.ok) {
         throw new Error(`Failed to fetch categories: ${categoriesResponse.status}`);
       }
       const categoriesData = await categoriesResponse.json();
       
-      setCategories(categoriesData);
+      setLocalCategories(categoriesData);
+      setCategories(categoriesData); // Update shared context
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Error fetching categories:', err);
@@ -62,6 +68,8 @@ export default function CategoriesScreen() {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -76,7 +84,7 @@ export default function CategoriesScreen() {
 
     setSubmitting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/categories?db=${DB}`, {
+      const response = await fetch(`${config.API_BASE_URL}/categories?db=${config.DB}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,6 +107,9 @@ export default function CategoriesScreen() {
 
       // Refresh data
       await fetchCategories();
+      
+      // Notify other screens to refresh their categories
+      refreshCategories();
 
       Alert.alert("Success", "Category added successfully!");
     } catch (err) {
@@ -113,7 +124,7 @@ export default function CategoriesScreen() {
 
   const handleDeleteCategory = async (categoryId: number) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/categories?db=${DB}`, {
+      const response = await fetch(`${config.API_BASE_URL}/categories?db=${config.DB}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -128,10 +139,14 @@ export default function CategoriesScreen() {
       }
 
       // Update local state immediately for better UX
-      setCategories(prev => prev.filter(cat => cat.categoryId !== categoryId));
+      setLocalCategories(prev => prev.filter(cat => cat.categoryId !== categoryId));
       
       // Refresh data from server
       await fetchCategories();
+      
+      // Notify other screens to refresh their categories
+      refreshCategories();
+      
       Alert.alert("Success", "Category deleted successfully!");
     } catch (err) {
       Alert.alert(
@@ -139,6 +154,57 @@ export default function CategoriesScreen() {
         err instanceof Error ? err.message : "Failed to delete category"
       );
     }
+  };
+
+  const handleEditCategory = async () => {
+    if (!editingCategory || !editName.trim()) {
+      Alert.alert("Error", "Please enter a category name");
+      return;
+    }
+
+    setEditSubmitting(true);
+    try {
+      const response = await fetch(`${config.API_BASE_URL}/categories?db=${config.DB}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          categoryId: editingCategory.categoryId,
+          name: editName.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update category: ${response.status}`);
+      }
+
+      // Reset form and close modal
+      setEditingCategory(null);
+      setEditName("");
+      setEditModalVisible(false);
+
+      // Refresh data
+      await fetchCategories();
+      
+      // Notify other screens to refresh their categories
+      refreshCategories();
+
+      Alert.alert("Success", "Category updated successfully!");
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        err instanceof Error ? err.message : "Failed to update category"
+      );
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const openEditModal = (category: Category) => {
+    setEditingCategory(category);
+    setEditName(category.name);
+    setEditModalVisible(true);
   };
 
   const getCategoryColor = (color?: string) => {
@@ -156,12 +222,20 @@ export default function CategoriesScreen() {
         <View style={styles.categoryInfo}>
           <Text style={styles.categoryName}>{item.name}</Text>
         </View>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteCategory(item.categoryId)}
-        >
-          <X size={16} color="#666" />
-        </TouchableOpacity>
+        <View style={styles.categoryActions}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => openEditModal(item)}
+          >
+            <Edit size={16} color="#666" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => handleDeleteCategory(item.categoryId)}
+          >
+            <X size={16} color="#666" />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -277,6 +351,67 @@ export default function CategoriesScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Edit Category Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={editModalVisible}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Category</Text>
+              <TouchableOpacity
+                onPress={() => setEditModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <X size={16} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView 
+              style={styles.modalBody}
+              showsVerticalScrollIndicator={true}
+            >
+              <Text style={styles.inputLabel}>Category Name</Text>
+              <TextInput
+                style={styles.textInput}
+                value={editName}
+                onChangeText={setEditName}
+                placeholder="Enter category name"
+                placeholderTextColor="#999"
+                autoFocus={true}
+              />
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setEditModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.addButton,
+                  editSubmitting && styles.addButtonDisabled,
+                ]}
+                onPress={handleEditCategory}
+                disabled={editSubmitting}
+              >
+                <Text style={styles.addButtonText}>
+                  {editSubmitting ? "Updating..." : "Update Category"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -355,14 +490,29 @@ const styles = StyleSheet.create({
     fontFamily: "monospace",
   },
   deleteButton: {
-    padding: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    padding: 6,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: "#F0F0F0",
     justifyContent: "center",
     alignItems: "center",
     alignSelf: "center",
+  },
+  editButton: {
+    padding: 6,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginRight: 8,
+  },
+  categoryActions: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   emptyState: {
@@ -435,7 +585,7 @@ const styles = StyleSheet.create({
   },
 
   modalBody: {
-    marginBottom: 20,
+    marginBottom: 15,
   },
   inputLabel: {
     fontSize: 18,
@@ -455,16 +605,20 @@ const styles = StyleSheet.create({
   },
   modalFooter: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    marginTop: 10,
+    justifyContent: "space-between",
+    gap: 12,
   },
   cancelButton: {
+    flex: 1,
     backgroundColor: "#F0F0F0",
     paddingVertical: 12,
     paddingHorizontal: 25,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#E5E5E5",
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 0,
   },
   cancelButtonText: {
     color: "#666",
@@ -472,12 +626,16 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   addButton: {
+    flex: 1,
     backgroundColor: "#666",
     paddingVertical: 12,
     paddingHorizontal: 25,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#666",
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 0,
   },
   addButtonDisabled: {
     backgroundColor: "#ccc",
