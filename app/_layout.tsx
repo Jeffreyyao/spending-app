@@ -4,7 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { List, User, Wallet } from "lucide-react-native";
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
-import { CategoryProvider } from './src/CategoryContext';
+import { CategoryProvider } from '../src/CategoryContext';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -52,6 +52,12 @@ export default function RootLayout() {
           },
         }}
       >
+        <Tabs.Screen
+          name="index"
+          options={{
+            href: null, // This hides the tab from the tab bar
+          }}
+        />
         <Tabs.Screen
           name="spendings"
           options={{

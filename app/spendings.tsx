@@ -15,8 +15,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useCategoryContext } from "./src/CategoryContext";
-import { config } from "./src/config";
+import { useCategoryContext } from "../src/CategoryContext";
+import { config } from "../src/config";
 
 interface Spending {
   spendingId: string;
