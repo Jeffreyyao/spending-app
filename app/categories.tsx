@@ -15,6 +15,9 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import EmptyState from "../src/components/EmptyState";
+import FloatingActionButton from "../src/components/FloatingActionButton";
+import IconCircleButton from "../src/components/IconCircleButton";
 import { config } from "../src/config";
 import { useCategoryContext } from "../src/contexts/CategoryContext";
 
@@ -223,18 +226,12 @@ export default function CategoriesScreen() {
           <Text style={styles.categoryName}>{item.name}</Text>
         </View>
         <View style={styles.categoryActions}>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => openEditModal(item)}
-          >
+          <IconCircleButton style={{ marginRight: 8 }} onPress={() => openEditModal(item)}>
             <Edit size={16} color="#666" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDeleteCategory(item.categoryId)}
-          >
+          </IconCircleButton>
+          <IconCircleButton onPress={() => handleDeleteCategory(item.categoryId)}>
             <X size={16} color="#666" />
-          </TouchableOpacity>
+          </IconCircleButton>
         </View>
       </View>
     </View>
@@ -261,10 +258,7 @@ export default function CategoriesScreen() {
   return (
     <View style={styles.container}>
       {categories.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No categories found</Text>
-          <Text style={styles.emptySubtext}>Pull to refresh or add new categories</Text>
-        </View>
+        <EmptyState title="No categories found" subtitle="Pull to refresh or add new categories" />
       ) : (
         <FlatList
           data={categories}
@@ -280,14 +274,9 @@ export default function CategoriesScreen() {
       )}
 
       {/* Floating Action Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => {
-          setModalVisible(true);
-        }}
-      >
+      <FloatingActionButton onPress={() => setModalVisible(true)} accessibilityLabel="Add category">
         <Plus size={24} color="white" />
-      </TouchableOpacity>
+      </FloatingActionButton>
 
       {/* Add Category Modal */}
       <Modal
@@ -489,49 +478,12 @@ const styles = StyleSheet.create({
     color: "#999",
     fontFamily: "monospace",
   },
-  deleteButton: {
-    padding: 6,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
-    alignSelf: "center",
-  },
-  editButton: {
-    padding: 6,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
-    alignSelf: "center",
-    marginRight: 8,
-  },
   categoryActions: {
     flexDirection: "row",
     alignItems: "center",
   },
 
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#666",
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: "#999",
-    textAlign: "center",
-  },
+  
   fab: {
     position: "absolute",
     bottom: 30,

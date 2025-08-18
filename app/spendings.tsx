@@ -15,6 +15,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import EmptyState from "../src/components/EmptyState";
+import FloatingActionButton from "../src/components/FloatingActionButton";
+import IconCircleButton from "../src/components/IconCircleButton";
 import { config } from "../src/config";
 import { useCategoryContext } from "../src/contexts/CategoryContext";
 
@@ -418,18 +421,17 @@ export default function SpendingsScreen() {
           {formatAmount(item.amount, item.currency)}
         </Text>
         <View style={styles.spendingActions}>
-          <TouchableOpacity
-            style={styles.editButton}
+          <IconCircleButton
+            style={{ marginRight: 8 }}
             onPress={() => openEditModal(item)}
           >
-            <Edit size={20} color="#666" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.deleteButton}
+            <Edit size={16} color="#666" />
+          </IconCircleButton>
+          <IconCircleButton
             onPress={() => handleDeleteSpending(item.spendingId, item.description)}
           >
             <X size={16} color="#666" />
-          </TouchableOpacity>
+          </IconCircleButton>
         </View>
       </View>
       <View style={styles.spendingDetails}>
@@ -471,12 +473,7 @@ export default function SpendingsScreen() {
   return (
     <View style={styles.container}>
       {spendings.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No spendings found</Text>
-          <Text style={styles.emptySubtext}>
-            Pull to refresh or add new expenses
-          </Text>
-        </View>
+        <EmptyState title="No spendings found" subtitle="Pull to refresh or add new expenses" />
       ) : (
         <>
           {renderSortHeader()}
@@ -495,14 +492,12 @@ export default function SpendingsScreen() {
       )}
 
       {/* Floating Action Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => {
-          setModalVisible(true);
-        }}
+      <FloatingActionButton
+        onPress={() => setModalVisible(true)}
+        accessibilityLabel="Add spending"
       >
         <Plus size={24} color="white" />
-      </TouchableOpacity>
+      </FloatingActionButton>
 
       {/* Add Spending Modal */}
       <Modal
@@ -930,26 +925,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
     minWidth: 80,
   },
-  deleteButton: {
-    padding: 6,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
-    alignSelf: "center",
-  },
-  editButton: {
-    padding: 6,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
-  },
   spendingActions: {
     flexDirection: "row",
     alignItems: "center",
@@ -982,44 +957,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#666",
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: "#999",
-    textAlign: "center",
-  },
-  // Floating Action Button
-  fab: {
-    position: "absolute",
-    bottom: 30,
-    right: 30,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#666",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
-  },
-
   // Modal Styles
   modalOverlay: {
     flex: 1,
