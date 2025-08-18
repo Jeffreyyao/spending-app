@@ -15,8 +15,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useCategoryContext } from "../src/CategoryContext";
 import { config } from "../src/config";
+import { useCategoryContext } from "../src/contexts/CategoryContext";
 
 interface Spending {
   spendingId: string;
@@ -43,7 +43,7 @@ const CURRENCIES = [
 ];
 
 export default function SpendingsScreen() {
-  const { categories, categoriesVersion } = useCategoryContext();
+  const { setCategories, categories, categoriesVersion } = useCategoryContext();
   const [spendings, setSpendings] = useState<Spending[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -91,8 +91,19 @@ export default function SpendingsScreen() {
       }
       const spendingsData = await spendingsResponse.json();
 
+      // Fetch categories
+      const categoriesResponse = await fetch(
+        `${config.API_BASE_URL}/categories?db=${config.DB}`
+      );
+      if (!categoriesResponse.ok) {
+        throw new Error(
+          `Failed to fetch categories: ${categoriesResponse.status}`
+        );
+      }
+      const categoriesData = await categoriesResponse.json();
+
       setSpendings(spendingsData);
-      // Categories are now managed by context, no need to fetch here
+      setCategories(categoriesData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
       console.error("Error fetching data:", err);

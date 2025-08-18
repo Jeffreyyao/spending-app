@@ -1,12 +1,8 @@
-import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { Redirect } from 'expo-router';
 
 export default function Index() {
-  useEffect(() => {
+  return (
     // Redirect to spendings screen on app launch
-    router.replace('/spendings');
-  }, []);
-
-  // Return null since we're redirecting immediately
-  return null;
+    <Redirect href="/spendings" />
+  );
 }
