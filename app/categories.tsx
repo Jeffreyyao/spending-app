@@ -9,7 +9,6 @@ import {
   Platform,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -220,12 +219,12 @@ export default function CategoriesScreen() {
   };
 
   const renderCategoryItem = ({ item }: { item: Category }) => (
-    <View style={styles.categoryItem}>
-      <View style={styles.categoryHeader}>
-        <View style={styles.categoryInfo}>
-          <Text style={styles.categoryName}>{item.name}</Text>
+    <View className="bg-white rounded-xl px-4 py-2 mb-3 shadow-sm">
+      <View className="flex-row items-center justify-between">
+        <View className="flex-1">
+          <Text className="text-lg font-semibold text-gray-800">{item.name}</Text>
         </View>
-        <View style={styles.categoryActions}>
+        <View className="flex-row items-center">
           <IconCircleButton style={{ marginRight: 8 }} onPress={() => openEditModal(item)}>
             <Edit size={16} color="#666" />
           </IconCircleButton>
@@ -239,24 +238,24 @@ export default function CategoriesScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator style={{ marginTop: 20 }} size="large" color="#666" />
-        <Text style={styles.loadingText}>Loading categories...</Text>
+      <View className="flex-1 bg-gray-100">
+        <ActivityIndicator className="mt-5" size="large" color="#666" />
+        <Text className="mt-5 text-base text-gray-600 text-center">Loading categories...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Error: {error}</Text>
-        <Text style={styles.retryText} onPress={fetchCategories}>Tap to retry</Text>
+      <View className="flex-1 bg-gray-100">
+        <Text className="text-base text-red-500 text-center mb-2.5">Error: {error}</Text>
+        <Text className="text-base text-gray-600 text-center underline" onPress={fetchCategories}>Tap to retry</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-gray-100">
       {categories.length === 0 ? (
         <EmptyState title="No categories found" subtitle="Pull to refresh or add new categories" />
       ) : (
@@ -264,8 +263,8 @@ export default function CategoriesScreen() {
           data={categories}
           renderItem={renderCategoryItem}
           keyExtractor={(item) => item.categoryId.toString()}
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
+          className="flex-1"
+          contentContainerStyle={{ padding: 20 }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
@@ -287,26 +286,26 @@ export default function CategoriesScreen() {
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalOverlay}
+          className="flex-1 justify-center items-center bg-black/50"
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add New Category</Text>
+          <View className="w-[90%] bg-white rounded-2xl p-5 shadow-lg">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-2xl font-bold text-gray-800">Add New Category</Text>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
-                style={styles.closeButton}
+                className="p-1"
               >
                 <X size={16} color="#666" />
               </TouchableOpacity>
             </View>
 
             <ScrollView 
-              style={styles.modalBody}
+              className="mb-4"
               showsVerticalScrollIndicator={true}
             >
-              <Text style={styles.inputLabel}>Category Name</Text>
+              <Text className="text-lg font-semibold text-gray-800 mb-2">Category Name</Text>
               <TextInput
-                style={styles.textInput}
+                className="border border-gray-300 rounded-lg m-1 p-4 text-base text-gray-800 bg-gray-50"
                 value={newCategory.name}
                 onChangeText={(text) =>
                   setNewCategory((prev) => ({ ...prev, name: text }))
@@ -317,22 +316,23 @@ export default function CategoriesScreen() {
               />
             </ScrollView>
 
-            <View style={styles.modalFooter}>
+            <View className="flex-row justify-between gap-3">
               <TouchableOpacity
-                style={styles.cancelButton}
+                className="flex-1 bg-gray-100 py-3 px-6 rounded-lg border border-gray-200 justify-center items-center"
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text className="text-gray-600 text-base font-semibold">Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.addButton,
-                  submitting && styles.addButtonDisabled,
-                ]}
+                className={`flex-1 py-3 px-6 rounded-lg border justify-center items-center ${
+                  submitting 
+                    ? 'bg-gray-300 border-gray-300' 
+                    : 'bg-gray-600 border-gray-600'
+                }`}
                 onPress={handleAddCategory}
                 disabled={submitting}
               >
-                <Text style={styles.addButtonText}>
+                <Text className="text-white text-base font-bold">
                   {submitting ? "Adding..." : "Add Category"}
                 </Text>
               </TouchableOpacity>
@@ -350,26 +350,26 @@ export default function CategoriesScreen() {
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalOverlay}
+          className="flex-1 justify-center items-center bg-black/50"
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Category</Text>
+          <View className="w-[90%] bg-white rounded-2xl p-5 shadow-lg">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-2xl font-bold text-gray-800">Edit Category</Text>
               <TouchableOpacity
                 onPress={() => setEditModalVisible(false)}
-                style={styles.closeButton}
+                className="p-1"
               >
                 <X size={16} color="#666" />
               </TouchableOpacity>
             </View>
 
             <ScrollView 
-              style={styles.modalBody}
+              className="mb-4"
               showsVerticalScrollIndicator={true}
             >
-              <Text style={styles.inputLabel}>Category Name</Text>
+              <Text className="text-lg font-semibold text-gray-800 mb-2">Category Name</Text>
               <TextInput
-                style={styles.textInput}
+                className="border border-gray-300 rounded-lg m-1 p-4 text-base text-gray-800 bg-gray-50"
                 value={editName}
                 onChangeText={setEditName}
                 placeholder="Enter category name"
@@ -378,22 +378,23 @@ export default function CategoriesScreen() {
               />
             </ScrollView>
 
-            <View style={styles.modalFooter}>
+            <View className="flex-row justify-between gap-3">
               <TouchableOpacity
-                style={styles.cancelButton}
+                className="flex-1 bg-gray-100 py-3 px-6 rounded-lg border border-gray-200 justify-center items-center"
                 onPress={() => setEditModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text className="text-gray-600 text-base font-semibold">Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.addButton,
-                  editSubmitting && styles.addButtonDisabled,
-                ]}
+                className={`flex-1 py-3 px-6 rounded-lg border justify-center items-center ${
+                  editSubmitting 
+                    ? 'bg-gray-300 border-gray-300' 
+                    : 'bg-gray-600 border-gray-600'
+                }`}
                 onPress={handleEditCategory}
                 disabled={editSubmitting}
               >
-                <Text style={styles.addButtonText}>
+                <Text className="text-white text-base font-bold">
                   {editSubmitting ? "Updating..." : "Update Category"}
                 </Text>
               </TouchableOpacity>
@@ -404,198 +405,3 @@ export default function CategoriesScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  loadingText: {
-    marginTop: 20,
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#FF3B30",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  retryText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    textDecorationLine: "underline",
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    padding: 20,
-  },
-  categoryItem: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  categoryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  categoryColor: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    marginRight: 12,
-  },
-  categoryInfo: {
-    flex: 1,
-  },
-  categoryName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
-  },
-  categoryDescription: {
-    fontSize: 14,
-    color: "#666",
-    lineHeight: 20,
-  },
-  categoryId: {
-    fontSize: 12,
-    color: "#999",
-    fontFamily: "monospace",
-  },
-  categoryActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  
-  fab: {
-    position: "absolute",
-    bottom: 30,
-    right: 30,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#666",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
-  },
-
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    width: "90%",
-    backgroundColor: "white",
-    borderRadius: 15,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 7,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  closeButton: {
-    padding: 5,
-  },
-
-  modalBody: {
-    marginBottom: 15,
-  },
-  inputLabel: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 8,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    margin: 3,
-    padding: 15,
-    fontSize: 16,
-    color: "#333",
-    backgroundColor: "#f9f9f9",
-  },
-  modalFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: "#F0F0F0",
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
-    justifyContent: "center",
-    alignItems: "center",
-    minWidth: 0,
-  },
-  cancelButtonText: {
-    color: "#666",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  addButton: {
-    flex: 1,
-    backgroundColor: "#666",
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#666",
-    justifyContent: "center",
-    alignItems: "center",
-    minWidth: 0,
-  },
-  addButtonDisabled: {
-    backgroundColor: "#ccc",
-    borderColor: "#ccc",
-  },
-  addButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});

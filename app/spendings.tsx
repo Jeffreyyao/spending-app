@@ -9,7 +9,6 @@ import {
   Platform,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -361,66 +360,58 @@ export default function SpendingsScreen() {
   };
 
   const renderSortHeader = () => (
-    <View style={styles.sortHeader}>
-      <View style={styles.sortOptions}>
+    <View className="flex-row justify-end items-center px-5 py-2.5 bg-gray-200 border-b border-gray-300">
+      <View className="flex-row gap-[15px]">
         <TouchableOpacity
-          style={[
-            styles.sortOption,
-            sortBy === 'date' && styles.sortOptionSelected
-          ]}
+          className={`flex-row gap-1 items-center justify-center rounded-md p-2 ${
+            sortBy === 'date' ? 'bg-[#666] border-[#666]' : 'bg-[#F5F5F5] border-[#E0E0E0]'
+          }`}
           onPress={() => handleSort('date')}
         >
-          <Text style={[
-            styles.sortOptionText,
-            sortBy === 'date' && styles.sortOptionTextSelected
-          ]}>
-            Date {getSortIcon('date')}
+          <Text className={`${sortBy === 'date' ? 'text-[#F5F5F5]' : 'text-[#666]'}`}>
+            Date
           </Text>
+          {getSortIcon('date')}
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[
-            styles.sortOption,
-            sortBy === 'amount' && styles.sortOptionSelected
-          ]}
+          className={`flex-row gap-1 items-center justify-center rounded-md p-2 ${
+            sortBy === 'amount' ? 'bg-[#666] border-[#666]' : 'bg-[#F5F5F5] border-[#E0E0E0]'
+          }`}
           onPress={() => handleSort('amount')}
         >
-          <Text style={[
-            styles.sortOptionText,
-            sortBy === 'amount' && styles.sortOptionTextSelected
-          ]}>
-            Amount {getSortIcon('amount')}
+          <Text className={`${sortBy === 'amount' ? 'text-[#F5F5F5]' : 'text-[#666]'}`}>
+            Amount
           </Text>
+          {getSortIcon('amount')}
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[
-            styles.sortOption,
-            sortBy === 'category' && styles.sortOptionSelected
-          ]}
+          className={`flex-row gap-1 items-center justify-center rounded-md p-2 ${
+            sortBy === 'category' ? 'bg-[#666] border-[#666]' : 'bg-[#F5F5F5] border-[#E0E0E0]'
+          }`}
           onPress={() => handleSort('category')}
         >
-          <Text style={[
-            styles.sortOptionText,
-            sortBy === 'category' && styles.sortOptionTextSelected
-          ]}>
-            Category {getSortIcon('category')}
+          <Text className={`${sortBy === 'category' ? 'text-[#F5F5F5]' : 'text-[#666]'}`}>
+            Category
           </Text>
+          {getSortIcon('category')}
         </TouchableOpacity>
       </View>
     </View>
   );
 
   const renderSpendingItem = ({ item }: { item: Spending }) => (
-    <View style={styles.spendingItem}>
-      <View style={styles.spendingHeader}>
-        <Text style={[
-          styles.spendingAmount,
-          { color: item.amount >= 0 ? '#007AFF' : '#FF9500' }
-        ]}>
+    <View className="bg-white rounded-xl px-4 py-2 mb-3 shadow-sm">
+      <View className="flex-row items-center justify-between mb-2">
+        <Text 
+          className={`text-lg font-bold mr-3 min-w-[80px] ${
+            item.amount >= 0 ? 'text-blue-500' : 'text-orange-500'
+          }`}
+        >
           {formatAmount(item.amount, item.currency)}
         </Text>
-        <View style={styles.spendingActions}>
+        <View className="flex-row items-center">
           <IconCircleButton
             style={{ marginRight: 8 }}
             onPress={() => openEditModal(item)}
@@ -434,17 +425,17 @@ export default function SpendingsScreen() {
           </IconCircleButton>
         </View>
       </View>
-      <View style={styles.spendingDetails}>
-        <Text style={styles.spendingCategory}>
+      <View className="flex-row justify-between items-center">
+        <Text className="text-sm text-gray-600 bg-blue-50 px-2 py-1 rounded-md">
           {getCategoryName(item.categoryId)}
         </Text>
-        <Text style={styles.spendingDate}>
+        <Text className="text-sm text-gray-600">
           {formatDate(item.dateOfSpending)}
         </Text>
       </View>
       {item.description && (
-        <View style={styles.spendingDescriptionContainer}>
-          <Text style={styles.spendingDescription}>{item.description}</Text>
+        <View className="mt-2 pt-2 border-t border-gray-300">
+          <Text className="text-sm text-gray-600">{item.description}</Text>
         </View>
       )}
     </View>
@@ -452,18 +443,18 @@ export default function SpendingsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator style={{ marginTop: 20 }} size="large" color="#666" />
-        <Text style={styles.loadingText}>Loading spendings...</Text>
+      <View className="flex-1 bg-gray-100">
+        <ActivityIndicator className="mt-5" size="large" color="#666" />
+        <Text className="mt-5 text-base text-gray-600 text-center">Loading spendings...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Error: {error}</Text>
-        <Text style={styles.retryText} onPress={fetchData}>
+      <View className="flex-1 bg-gray-100">
+        <Text className="text-base text-red-500 text-center mb-2.5">Error: {error}</Text>
+        <Text className="text-base text-gray-600 text-center underline" onPress={fetchData}>
           Tap to retry
         </Text>
       </View>
@@ -471,7 +462,7 @@ export default function SpendingsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-gray-100">
       {spendings.length === 0 ? (
         <EmptyState title="No spendings found" subtitle="Pull to refresh or add new expenses" />
       ) : (
@@ -481,8 +472,8 @@ export default function SpendingsScreen() {
             data={getSortedSpendings()}
             renderItem={renderSpendingItem}
             keyExtractor={(item) => item.spendingId}
-            style={styles.list}
-            contentContainerStyle={styles.listContent}
+            className="flex-1"
+            contentContainerStyle={{ padding: 20 }}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
@@ -508,26 +499,26 @@ export default function SpendingsScreen() {
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalOverlay}
+          className="flex-1 bg-black/50 justify-end"
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add New Spending</Text>
+          <View className="bg-white rounded-t-2xl max-h-[80%] w-full">
+            <View className="flex-row justify-between items-center p-5 border-b border-gray-200">
+              <Text className="text-xl font-bold text-gray-800">Add New Spending</Text>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
-                style={styles.closeButton}
+                className="w-[30px] h-[30px] rounded-full bg-gray-100 justify-center items-center"
               >
                 <X size={16} color="#666" />
               </TouchableOpacity>
             </View>
 
             <ScrollView 
-              style={styles.modalBody}
+              className="p-5 px-4"
               showsVerticalScrollIndicator={true}
             >
-              <Text style={styles.inputLabel}>Description</Text>
+              <Text className="text-base font-semibold text-gray-800 mb-2 mt-4">Description</Text>
               <TextInput
-                style={styles.textInput}
+                className="border border-gray-200 rounded-lg p-3 text-base text-gray-800 bg-gray-50"
                 value={newSpending.description}
                 onChangeText={(text) =>
                   setNewSpending((prev) => ({ ...prev, description: text }))
@@ -536,10 +527,10 @@ export default function SpendingsScreen() {
                 placeholderTextColor="#999"
               />
 
-              <Text style={styles.inputLabel}>Amount</Text>
-              <View style={styles.amountRow}>
+              <Text className="text-base font-semibold text-gray-800 mb-2 mt-4">Amount</Text>
+              <View className="flex-row items-center flex-wrap gap-2">
                 <TextInput
-                  style={[styles.textInput, styles.amountInput]}
+                  className="flex-1 min-w-[120px] border border-gray-200 rounded-lg p-3 text-base text-gray-800 bg-gray-50"
                   value={newSpending.amount}
                   onChangeText={(text) =>
                     setNewSpending((prev) => ({ ...prev, amount: text }))
@@ -548,52 +539,56 @@ export default function SpendingsScreen() {
                   placeholderTextColor="#999"
                   keyboardType="numeric"
                 />
-                <View style={styles.typeSelector}>
+                <View className="flex-row gap-2 flex-shrink-0">
                   <TouchableOpacity
-                    style={[
-                      styles.typeOption,
-                      newSpending.type === "spending" && styles.typeOptionSpendingSelected
-                    ]}
+                    className={`px-3 py-2 rounded-2xl min-w-[70px] items-center ${
+                      newSpending.type === "spending" 
+                        ? 'bg-orange-500 border-orange-500' 
+                        : 'bg-gray-100 border-gray-200'
+                    } border`}
                     onPress={() => setNewSpending(prev => ({ ...prev, type: "spending" }))}
                   >
-                    <Text style={[
-                      styles.typeText,
-                      newSpending.type === "spending" && styles.typeTextSelected
-                    ]}>
+                    <Text className={`text-sm font-medium text-center ${
+                      newSpending.type === "spending" 
+                        ? 'text-white font-semibold' 
+                        : 'text-gray-600'
+                    }`}>
                       Spending
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[
-                      styles.typeOption,
-                      newSpending.type === "income" && styles.typeOptionIncomeSelected
-                    ]}
+                    className={`px-3 py-2 rounded-2xl min-w-[70px] items-center ${
+                      newSpending.type === "income" 
+                        ? 'bg-blue-500 border-blue-500' 
+                        : 'bg-gray-100 border-gray-200'
+                    } border`}
                     onPress={() => setNewSpending(prev => ({ ...prev, type: "income" }))}
                   >
-                    <Text style={[
-                      styles.typeText,
-                      newSpending.type === "income" && styles.typeTextSelected
-                    ]}>
+                    <Text className={`text-sm font-medium text-center ${
+                      newSpending.type === "income" 
+                        ? 'text-white font-semibold' 
+                        : 'text-gray-600'
+                    }`}>
                       Income
                     </Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
-              <Text style={styles.inputLabel}>Currency</Text>
+              <Text className="text-base font-semibold text-gray-800 mb-2 mt-4">Currency</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={true}
-                style={styles.currencyContainer}
+                className="mb-4"
               >
                 {CURRENCIES.map((currency) => (
                   <TouchableOpacity
                     key={currency.code}
-                    style={[
-                      styles.currencyOption,
-                      newSpending.currency === currency.code &&
-                        styles.currencyOptionSelected,
-                    ]}
+                    className={`px-4 py-2 mr-2 rounded-full border ${
+                      newSpending.currency === currency.code
+                        ? 'bg-gray-600 border-gray-600'
+                        : 'bg-gray-100 border-gray-200'
+                    }`}
                     onPress={() =>
                       setNewSpending((prev) => ({
                         ...prev,
@@ -602,11 +597,11 @@ export default function SpendingsScreen() {
                     }
                   >
                     <Text
-                      style={[
-                        styles.currencyText,
-                        newSpending.currency === currency.code &&
-                          styles.currencyTextSelected,
-                      ]}
+                      className={`text-sm ${
+                        newSpending.currency === currency.code
+                          ? 'text-white font-semibold'
+                          : 'text-gray-600'
+                      }`}
                     >
                       {currency.symbol} {currency.code}
                     </Text>
@@ -614,25 +609,25 @@ export default function SpendingsScreen() {
                 ))}
               </ScrollView>
 
-              <Text style={styles.inputLabel}>Category</Text>
+              <Text className="text-base font-semibold text-gray-800 mb-2 mt-4">Category</Text>
               {categories.length === 0 ? (
-                <Text style={styles.noCategoriesText}>
+                <Text className="text-sm text-gray-500 italic text-center py-5">
                   No categories available
                 </Text>
               ) : (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={true}
-                  style={styles.categoryContainer}
+                  className="mb-4"
               >
                   {categories.map((category) => (
                     <TouchableOpacity
                       key={category.categoryId}
-                      style={[
-                        styles.categoryOption,
-                        newSpending.categoryId === category.categoryId &&
-                          styles.categoryOptionSelected,
-                      ]}
+                      className={`px-4 py-2 mr-2 rounded-full border ${
+                        newSpending.categoryId === category.categoryId
+                          ? 'bg-gray-600 border-gray-600'
+                          : 'bg-gray-100 border-gray-200'
+                      }`}
                       onPress={() => {
                         console.log(
                           "Category selected:",
@@ -649,11 +644,11 @@ export default function SpendingsScreen() {
                       }}
                     >
                       <Text
-                        style={[
-                          styles.categoryText,
-                          newSpending.categoryId === category.categoryId &&
-                            styles.categoryTextSelected,
-                        ]}
+                        className={`text-sm ${
+                          newSpending.categoryId === category.categoryId
+                            ? 'text-white font-semibold'
+                            : 'text-gray-600'
+                        }`}
                       >
                         {category.name}
                       </Text>
@@ -663,22 +658,21 @@ export default function SpendingsScreen() {
               )}
             </ScrollView>
 
-            <View style={styles.modalFooter}>
+            <View className="flex-row p-5 border-t border-gray-200 gap-3 justify-between">
               <TouchableOpacity
-                style={styles.cancelButton}
+                className="flex-1 py-3 rounded-lg bg-gray-100 justify-center items-center"
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text className="text-base text-gray-600 font-semibold">Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.addButton,
-                  submitting && styles.addButtonDisabled,
-                ]}
+                className={`flex-1 py-3 rounded-lg justify-center items-center ${
+                  submitting ? 'bg-gray-400' : 'bg-gray-600'
+                }`}
                 onPress={handleAddSpending}
                 disabled={submitting}
               >
-                <Text style={styles.addButtonText}>
+                <Text className="text-base text-white font-semibold">
                   {submitting ? "Adding..." : "Add Spending"}
                 </Text>
               </TouchableOpacity>
@@ -696,26 +690,26 @@ export default function SpendingsScreen() {
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalOverlay}
+          className="flex-1 bg-black/50 justify-end"
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Spending</Text>
+          <View className="bg-white rounded-t-2xl max-h-[80%] w-full">
+            <View className="flex-row justify-between items-center p-5 border-b border-gray-200">
+              <Text className="text-xl font-bold text-gray-800">Edit Spending</Text>
               <TouchableOpacity
                 onPress={() => setEditModalVisible(false)}
-                style={styles.closeButton}
+                className="w-[30px] h-[30px] rounded-full bg-gray-100 justify-center items-center"
               >
                 <X size={16} color="#666" />
               </TouchableOpacity>
             </View>
 
             <ScrollView 
-              style={styles.modalBody}
+              className="p-5 px-4"
               showsVerticalScrollIndicator={true}
             >
-              <Text style={styles.inputLabel}>Description</Text>
+              <Text className="text-base font-semibold text-gray-800 mb-2 mt-4">Description</Text>
               <TextInput
-                style={styles.textInput}
+                className="border border-gray-200 rounded-lg p-3 text-base text-gray-800 bg-gray-50"
                 value={editSpending.description}
                 onChangeText={(text) =>
                   setEditSpending((prev) => ({ ...prev, description: text }))
@@ -724,10 +718,10 @@ export default function SpendingsScreen() {
                 placeholderTextColor="#999"
               />
 
-              <Text style={styles.inputLabel}>Amount</Text>
-              <View style={styles.amountRow}>
+              <Text className="text-base font-semibold text-gray-800 mb-2 mt-4">Amount</Text>
+              <View className="flex-row items-center flex-wrap gap-2">
                 <TextInput
-                  style={[styles.textInput, styles.amountInput]}
+                  className="flex-1 min-w-[120px] border border-gray-200 rounded-lg p-3 text-base text-gray-800 bg-gray-50"
                   value={editSpending.amount}
                   onChangeText={(text) =>
                     setEditSpending((prev) => ({ ...prev, amount: text }))
@@ -736,52 +730,56 @@ export default function SpendingsScreen() {
                   placeholderTextColor="#999"
                   keyboardType="numeric"
                 />
-                <View style={styles.typeSelector}>
+                <View className="flex-row gap-2 flex-shrink-0">
                   <TouchableOpacity
-                    style={[
-                      styles.typeOption,
-                      editSpending.type === "spending" && styles.typeOptionSpendingSelected
-                    ]}
+                    className={`px-3 py-2 rounded-2xl min-w-[70px] items-center ${
+                      editSpending.type === "spending" 
+                        ? 'bg-orange-500 border-orange-500' 
+                        : 'bg-gray-100 border-gray-200'
+                    } border`}
                     onPress={() => setEditSpending(prev => ({ ...prev, type: "spending" }))}
                   >
-                    <Text style={[
-                      styles.typeText,
-                      editSpending.type === "spending" && styles.typeTextSelected
-                    ]}>
+                    <Text className={`text-sm font-medium text-center ${
+                      editSpending.type === "spending" 
+                        ? 'text-white font-semibold' 
+                        : 'text-gray-600'
+                    }`}>
                       Spending
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[
-                      styles.typeOption,
-                      editSpending.type === "income" && styles.typeOptionIncomeSelected
-                    ]}
+                    className={`px-3 py-2 rounded-2xl min-w-[70px] items-center ${
+                      editSpending.type === "income" 
+                        ? 'bg-blue-500 border-blue-500' 
+                        : 'bg-gray-100 border-gray-200'
+                    } border`}
                     onPress={() => setEditSpending(prev => ({ ...prev, type: "income" }))}
                   >
-                    <Text style={[
-                      styles.typeText,
-                      editSpending.type === "income" && styles.typeTextSelected
-                    ]}>
+                    <Text className={`text-sm font-medium text-center ${
+                      editSpending.type === "income" 
+                        ? 'text-white font-semibold' 
+                        : 'text-gray-600'
+                    }`}>
                       Income
                     </Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
-              <Text style={styles.inputLabel}>Currency</Text>
+              <Text className="text-base font-semibold text-gray-800 mb-2 mt-4">Currency</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={true}
-                style={styles.currencyContainer}
+                className="mb-4"
               >
                 {CURRENCIES.map((currency) => (
                   <TouchableOpacity
                     key={currency.code}
-                    style={[
-                      styles.currencyOption,
-                      editSpending.currency === currency.code &&
-                        styles.currencyOptionSelected,
-                    ]}
+                    className={`px-4 py-2 mr-2 rounded-full border ${
+                      editSpending.currency === currency.code
+                        ? 'bg-gray-600 border-gray-600'
+                        : 'bg-gray-100 border-gray-200'
+                    }`}
                     onPress={() =>
                       setEditSpending((prev) => ({
                         ...prev,
@@ -790,11 +788,11 @@ export default function SpendingsScreen() {
                     }
                   >
                     <Text
-                      style={[
-                        styles.currencyText,
-                        editSpending.currency === currency.code &&
-                          styles.currencyTextSelected,
-                      ]}
+                      className={`text-sm ${
+                        editSpending.currency === currency.code
+                          ? 'text-white font-semibold'
+                          : 'text-gray-600'
+                      }`}
                     >
                       {currency.symbol} {currency.code}
                     </Text>
@@ -802,25 +800,25 @@ export default function SpendingsScreen() {
                 ))}
               </ScrollView>
 
-              <Text style={styles.inputLabel}>Category</Text>
+              <Text className="text-base font-semibold text-gray-800 mb-2 mt-4">Category</Text>
               {categories.length === 0 ? (
-                <Text style={styles.noCategoriesText}>
+                <Text className="text-sm text-gray-500 italic text-center py-5">
                   No categories available
                 </Text>
               ) : (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={true}
-                  style={styles.categoryContainer}
+                  className="mb-4"
               >
                   {categories.map((category) => (
                     <TouchableOpacity
                       key={category.categoryId}
-                      style={[
-                        styles.categoryOption,
-                        editSpending.categoryId === category.categoryId &&
-                          styles.categoryOptionSelected,
-                      ]}
+                      className={`px-4 py-2 mr-2 rounded-full border ${
+                        editSpending.categoryId === category.categoryId
+                          ? 'bg-gray-600 border-gray-600'
+                          : 'bg-gray-100 border-gray-200'
+                      }`}
                       onPress={() => {
                         setEditSpending((prev) => ({
                           ...prev,
@@ -829,11 +827,11 @@ export default function SpendingsScreen() {
                       }}
                     >
                       <Text
-                        style={[
-                          styles.categoryText,
-                          editSpending.categoryId === category.categoryId &&
-                            styles.categoryTextSelected,
-                        ]}
+                        className={`text-sm ${
+                          editSpending.categoryId === category.categoryId
+                            ? 'text-white font-semibold'
+                            : 'text-gray-600'
+                        }`}
                       >
                         {category.name}
                       </Text>
@@ -843,22 +841,21 @@ export default function SpendingsScreen() {
               )}
             </ScrollView>
 
-            <View style={styles.modalFooter}>
+            <View className="flex-row p-5 border-t border-gray-200 gap-3 justify-between">
               <TouchableOpacity
-                style={styles.cancelButton}
+                className="flex-1 py-3 rounded-lg bg-gray-100 justify-center items-center"
                 onPress={() => setEditModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text className="text-base text-gray-600 font-semibold">Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.addButton,
-                  editSubmitting && styles.addButtonDisabled,
-                ]}
+                className={`flex-1 py-3 rounded-lg justify-center items-center ${
+                  editSubmitting ? 'bg-gray-400' : 'bg-gray-600'
+                }`}
                 onPress={handleEditSpending}
                 disabled={editSubmitting}
               >
-                <Text style={styles.addButtonText}>
+                <Text className="text-base text-white font-semibold">
                   {editSubmitting ? "Updating..." : "Update Spending"}
                 </Text>
               </TouchableOpacity>
@@ -869,335 +866,4 @@ export default function SpendingsScreen() {
     </View>
   );
 }
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  loadingText: {
-    marginTop: 20,
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#FF3B30",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  retryText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    textDecorationLine: "underline",
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    padding: 20,
-  },
-  spendingItem: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  spendingHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  spendingAmount: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#007AFF",
-    marginRight: 12,
-    minWidth: 80,
-  },
-  spendingActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  spendingDescriptionContainer: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
-  },
-  spendingDescription: {
-    fontSize: 14,
-    color: "#666",
-  },
-  spendingDetails: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  spendingCategory: {
-    fontSize: 14,
-    color: "#666",
-    backgroundColor: "#E3F2FD",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  spendingDate: {
-    fontSize: 14,
-    color: "#666",
-  },
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: "80%",
-    width: "100%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  closeButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  modalBody: {
-    padding: 20,
-    paddingHorizontal: 16,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: "#333",
-    backgroundColor: "#FAFAFA",
-  },
-  currencyContainer: {
-    marginBottom: 16,
-  },
-  currencyOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: "#F0F0F0",
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
-  },
-  currencyOptionSelected: {
-    backgroundColor: "#666",
-    borderColor: "#666",
-  },
-  currencyText: {
-    fontSize: 14,
-    color: "#666",
-  },
-  currencyTextSelected: {
-    color: "white",
-    fontWeight: "600",
-  },
-  categoryContainer: {
-    marginBottom: 16,
-  },
-  categoryOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: "#F0F0F0",
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
-  },
-  categoryOptionSelected: {
-    backgroundColor: "#666",
-    borderColor: "#666",
-  },
-  categoryText: {
-    fontSize: 14,
-    color: "#666",
-  },
-  categoryTextSelected: {
-    color: "white",
-    fontWeight: "600",
-  },
-  noCategoriesText: {
-    fontSize: 14,
-    color: "#999",
-    fontStyle: "italic",
-    textAlign: "center",
-    paddingVertical: 20,
-  },
-  modalFooter: {
-    flexDirection: "row",
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E5E5",
-    gap: 12,
-    justifyContent: "space-between",
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
-    minWidth: 0,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: "#666",
-    fontWeight: "600",
-  },
-  addButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: "#666",
-    justifyContent: "center",
-    alignItems: "center",
-    minWidth: 0,
-  },
-  addButtonDisabled: {
-    backgroundColor: "#B0B0B0",
-  },
-  addButtonText: {
-    fontSize: 16,
-    color: "white",
-    fontWeight: "600",
-  },
-  // Sort Header Styles
-  sortHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: "#E0E0E0",
-    borderBottomWidth: 1,
-    borderBottomColor: "#D0D0D0",
-  },
-  sortHeaderTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  sortOptions: {
-    marginLeft: 15,
-    flexDirection: "row",
-    gap: 15,
-  },
-  sortOption: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 15,
-    backgroundColor: "#F5F5F5",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sortOptionSelected: {
-    backgroundColor: "#666",
-    borderColor: "#666",
-  },
-  sortOptionText: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-  },
-  sortOptionTextSelected: {
-    color: "white",
-    fontWeight: "600",
-    textAlign: "center",
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  // Amount and Type Selection Styles
-  amountRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  amountInput: {
-    flex: 1,
-    minWidth: 120,
-  },
-  typeSelector: {
-    flexDirection: "row",
-    gap: 8,
-    flexShrink: 0,
-  },
-  typeOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: "#F0F0F0",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    minWidth: 70,
-    alignItems: "center",
-  },
-  typeOptionSpendingSelected: {
-    backgroundColor: "#FF9500",
-    borderColor: "#FF9500",
-  },
-  typeOptionIncomeSelected: {
-    backgroundColor: "#007AFF",
-    borderColor: "#007AFF",
-  },
-  typeText: {
-    fontSize: 14,
-    color: "#666",
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  typeTextSelected: {
-    color: "white",
-    fontWeight: "600",
-  },
-});
 
